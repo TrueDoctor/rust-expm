@@ -726,8 +726,11 @@ fn as_slice_with_layout_mut<S, T, D>(a: &mut ArrayBase<S, D>) -> Option<(&mut [T
 #[cfg(test)]
 mod tests {
     extern crate openblas_src;
+    extern crate ndarray;
     use ndarray::prelude::*;
     use approx::assert_ulps_eq;
+    use std::f64::consts::E;
+    use ndarray::array;
 
     use crate::PadeOrder;
 
@@ -781,14 +784,49 @@ mod tests {
 
     #[test]
     fn exp_of_unit() {
-        let n = 5;
-        let a = Array2::eye(n);
+        for n in 2..10 {
+            let a = Array2::eye(n);
+            let mut b = Array2::<f64>::zeros((n, n));
+
+            crate::expm(&a, &mut b);
+
+            for &elem in &b.diag() {
+                assert_ulps_eq!(elem, E, max_ulps = 1);
+            }
+        }
+    }
+
+    #[test]
+    fn exp_of_doubled_unit() {
+        for n in 2..10 {
+            let a = 2.0 * Array2::eye(n);
+            let mut b = Array2::<f64>::zeros((n, n));
+
+            crate::expm(&a, &mut b);
+
+            for &elem in &b.diag() {
+                assert_ulps_eq!(elem, E * E, max_ulps = 1);
+            }
+        }
+    }
+
+    #[test]
+    fn exp_of_random_matrix() {
+        let n = 2;
+        let a = array![[1.2, 5.6], [3.0, 4.0]];
+        let expected = array![[346.557, 661.735], [354.501, 354.501]];
         let mut b = Array2::<f64>::zeros((n, n));
 
         crate::expm(&a, &mut b);
 
-        for &elem in &b.diag() {
-            assert_ulps_eq!(elem, 1f64.exp(), max_ulps=1);
+        let mut b = Array2::zeros((2, 2));
+        crate::expm(&a, &mut b);
+        println!("Matrix: {}", a);
+        println!("Result: {}", b);
+        println!("Expected: {}", expected);
+
+        for (b1, b2) in b.iter().zip(expected.iter()) {
+            assert_ulps_eq!(b1, b2, max_ulps = 1);
         }
     }
 }
