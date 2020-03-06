@@ -656,6 +656,10 @@ mod tests {
     use pyo3::prelude::{ObjectProtocol, Python};
     use pyo3::types::PyDict;
     use numpy::{PyArray, PyArray2};
+    use num_complex::Complex64 as c64;
+    use num_traits::{Zero, One};
+    use alga::general::{RealField, ComplexField};
+    use approx::assert_relative_eq;
 
     macro_rules! python_testing {
         ( $( $testname:ident, $scalar:ty, $arr:expr ),+ ) => {
@@ -686,7 +690,7 @@ mod tests {
                 crate::expm(&a, &mut b);
 
                 for (b1, b2) in b.iter().zip(python_result.iter()){
-                    relative_eq!(b1, b2);
+                    assert_relative_eq!((b1 - b2).abs(), 0.0, epsilon = 0.00000001);
                 }
             }
             )+
@@ -729,9 +733,13 @@ mod tests {
     );
 
     python_testing!(
-        simple, f64, vec![1.0, 0.0, 1.0, 0.0],
-        double, f64, vec![2.0, 0.0, 2.0, 0.0],
-        random, f64, vec![1.02, -3.2, 4.2, 100.0]
+        simple_py, f64, vec![1.0,   0.0, 1.0, 0.0],
+        simple_py_f32, f32, vec![1f32,   0f32, 1f32, 0f32],
+        double_py, f64, vec![2.0,   0.0, 2.0, 0.0],
+        double_py_f32, f32, vec![2f32,   0f32, 2f32, 0f32],
+        random_py, f64, vec![1.02, -3.2, 4.2, 100.0],
+        complex_exp_py,    c64, vec![c64::one(), c64::zero(), c64::zero(), c64::one()],
+        complex_random_py, c64, vec![c64::new(4.6, 3.2), c64::new(1.2, 0.4), c64::new(3.6, 120.3), c64::new(-3.0, -2.123)]
     );
 
     #[test]
@@ -764,10 +772,6 @@ mod tests {
 
     #[test]
     fn complex_exp(){
-        use alga::general::{RealField, ComplexField};
-        use approx::assert_relative_eq;
-        use num_complex::Complex64 as c64;
-        use num_traits::{Zero, One};
 
         let _i = c64::i();
         let _sigma_x = Array2::<c64>::from_shape_vec(
