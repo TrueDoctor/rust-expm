@@ -21,3 +21,6 @@ statrs = "0.10"
 [dev-dependencies]
 approx = "0.3.1"
 openblas-src = "0.7"
+pyo3 = "0.8"
+numpy = "0.7.0"
+num-traits = "0.2"
